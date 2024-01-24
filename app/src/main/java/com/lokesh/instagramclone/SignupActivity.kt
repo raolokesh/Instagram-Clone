@@ -1,8 +1,11 @@
 package com.lokesh.instagramclone
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContract
+import androidx.activity.result.contract.ActivityResultContracts
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
@@ -10,11 +13,26 @@ import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
 import com.lokesh.instagramclone.databinding.ActivitySignupBinding
 import com.lokesh.instagramclone.models.UserRegisterModel
+import com.lokesh.instagramclone.utils.USER_NODE
+import com.lokesh.instagramclone.utils.USER_PROFILE_FOLDER
+import com.lokesh.instagramclone.utils.uploadImage
 
 class SignupActivity : AppCompatActivity() {
     val binding by lazy { ActivitySignupBinding.inflate(layoutInflater)}
 
     lateinit var user:UserRegisterModel
+    private var launcher = registerForActivityResult(ActivityResultContracts.GetContent()){ uri ->
+        uri?.let {
+            uploadImage(uri, USER_PROFILE_FOLDER){
+                if( it == null){
+
+                }else{
+                    user.image= it
+                    binding.profileimage.setImageURI(uri)
+                }
+            }
+        }
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
@@ -38,9 +56,11 @@ class SignupActivity : AppCompatActivity() {
                         user.email = binding.emailField.editText?.text.toString()
                         user.password =  binding.passwordField.editText?.text.toString()
 
-                        Firebase.firestore.collection("User").document(Firebase.auth.currentUser!!.uid).set(user)
+                        Firebase.firestore.collection(USER_NODE).document(Firebase.auth.currentUser!!.uid).set(user)
                             .addOnSuccessListener {
                                 Toast.makeText(this@SignupActivity,"User register Successfully",Toast.LENGTH_SHORT).show()
+                                startActivity(Intent(this@SignupActivity,HomeActivity::class.java))
+                                finish()
                             }
 
                     }
@@ -50,6 +70,13 @@ class SignupActivity : AppCompatActivity() {
                 }
 
             }
+        }
+        binding.addimage.setOnClickListener {
+            launcher.launch("image/*")
+        }
+        binding.loginTextView.setOnClickListener {
+            startActivity(Intent(this@SignupActivity,LoginActivity::class.java))
+            finish()
         }
     }
 }
