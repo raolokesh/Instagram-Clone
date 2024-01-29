@@ -11,11 +11,13 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
+import com.google.firebase.firestore.toObject
 import com.lokesh.instagramclone.databinding.ActivitySignupBinding
 import com.lokesh.instagramclone.models.UserRegisterModel
 import com.lokesh.instagramclone.utils.USER_NODE
 import com.lokesh.instagramclone.utils.USER_PROFILE_FOLDER
 import com.lokesh.instagramclone.utils.uploadImage
+import com.squareup.picasso.Picasso
 
 class SignupActivity : AppCompatActivity() {
     val binding by lazy { ActivitySignupBinding.inflate(layoutInflater)}
@@ -38,7 +40,33 @@ class SignupActivity : AppCompatActivity() {
         setContentView(binding.root)
         FirebaseApp.initializeApp(this)
         user = UserRegisterModel()
+        if (intent.hasExtra("MODE")){
+            if(intent.getIntExtra("MODE",-1) == 1){
+                binding.signupButton.text = "Update Profile"
+                Firebase.firestore.collection(USER_NODE).document(Firebase.auth.currentUser!!.uid).get().addOnSuccessListener {
+                    user  = it.toObject<UserRegisterModel>()!!
+
+                    if(!user.image.isNullOrEmpty()){
+                        Picasso.get().load(user.image).into(binding.profileimage)
+                    }
+                    binding.usernameField.editText?.setText(user.name)
+                    binding.emailField.editText?.setText(user.email)
+                    binding.passwordField.editText?.setText(user.password)
+                }
+            }
+        }
         binding.signupButton.setOnClickListener {
+            if (intent.hasExtra("MODE")){
+                if(intent.getIntExtra("MODE",-1) == 1){
+                    Firebase.firestore.collection(USER_NODE)
+                        .document(Firebase.auth.currentUser!!.uid).set(user)
+                        .addOnSuccessListener {
+                            startActivity(Intent(this@SignupActivity,HomeActivity::class.java))
+                            finish()
+                        }
+                }
+            }
+            else{
             if(binding.usernameField.editText?.text.toString().equals("") or
                 binding.emailField.editText?.text.toString().equals("") or
                 binding.passwordField.editText?.text.toString().equals("")){
@@ -69,6 +97,7 @@ class SignupActivity : AppCompatActivity() {
                     }
                 }
 
+            }
             }
         }
         binding.addimage.setOnClickListener {

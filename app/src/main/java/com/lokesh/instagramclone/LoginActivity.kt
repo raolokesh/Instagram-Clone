@@ -37,5 +37,8 @@ class LoginActivity : AppCompatActivity() {
                     }
             }
         }
+        binding.signupButton.setOnClickListener {
+            startActivity(Intent(this@LoginActivity,SignupActivity::class.java))
+        }
     }
 }
